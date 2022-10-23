@@ -5,8 +5,13 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
 // default themes
 type Theme =
+<<<<<<< master
   | 'vs-dark'
   | 'light';
+=======
+  | 'dark'
+  | 'light';
+>>>>>>> v4
 
 // monaco
 export type Monaco = typeof monaco;
@@ -32,13 +37,22 @@ export type OnValidate = (
 
 export interface EditorProps {
   /**
+<<<<<<< master
    * Default value of the current model
+=======
+   * The initial value of the default (auto created) model
+>>>>>>> v4
    */
   defaultValue?: string;
 
   /**
+<<<<<<< master
    * Default language of the current model
+=======
+   * Value of the current model
+>>>>>>> v4
    */
+<<<<<<< master
   defaultLanguage?: string;
 
   /**
@@ -56,14 +70,31 @@ export interface EditorProps {
   /**
    * Language of the current model
    */
+=======
+  value?: string;
+
+  /**
+   * Language of the current model
+   */
+>>>>>>> v4
   language?: string;
 
   /**
+<<<<<<< master
    * Path of the current model
    * Will be passed as the third argument to `.createModel` method
    * `monaco.editor.createModel(..., ..., monaco.Uri.parse(defaultPath))`
+=======
+   * Path for the default (auto created) model
+   * Will be passed as the third argument to `.createModel` method
+   * `monaco.editor.createModel(..., ..., monaco.Uri.parse(defaultModelPath))`
+>>>>>>> v4
    */
+<<<<<<< master
   path?: string;
+=======
+  defaultModelPath?: string;
+>>>>>>> v4
 
   /**
    * The theme for the monaco
@@ -95,16 +126,34 @@ export interface EditorProps {
   overrideServices?: monaco.editor.IEditorOverrideServices;
 
   /**
+<<<<<<< master
    * Indicator whether to save the models' view states between model changes or not
    * Defaults to true
+=======
+   * Width of the editor wrapper
+   * Defaults to 100%
+>>>>>>> v4
    */
+<<<<<<< master
   saveViewState?: boolean;
+=======
+  width?: number | string;
+>>>>>>> v4
 
   /**
+<<<<<<< master
    * Indicator whether to dispose the current model when the Editor is unmounted or not
    * Defaults to false
+=======
+   * Height of the editor wrapper
+   * Defaults to 100%
+>>>>>>> v4
    */
+<<<<<<< master
   keepCurrentModel?: boolean;
+=======
+  height?: number | string;
+>>>>>>> v4
 
   /**
    * Width of the editor wrapper
@@ -126,7 +175,11 @@ export interface EditorProps {
   /**
    * Props applied to the wrapper element
    */
+<<<<<<< master
   wrapperProps?: object;
+=======
+  wrapperClassName?: string;
+>>>>>>> v4
 
   /**
    * Signature: function(monaco: Monaco) => void
@@ -151,10 +204,15 @@ export interface EditorProps {
   onChange?: OnChange;
 
   /**
+<<<<<<< master
    * Signature: function(markers: monaco.editor.IMarker[]) => void
    * An event is emitted when the content of the current model is changed
    * and tthe current model markers are ready
    * Defaults to "noop"
+=======
+   * Signature: function(markers: monaco.editor.IMarker[]) => void
+   * An event is emitted when the length of the model markers of the current model isn't 0
+>>>>>>> v4
    */
   onValidate?: OnValidate;
 }
@@ -217,33 +275,71 @@ export interface DiffEditorProps {
   modifiedModelPath?: string;
 
   /**
+<<<<<<< master
    * Indicator whether to dispose the current original model when the DiffEditor is unmounted or not
-   */
-  keepCurrentOriginalModel?: boolean;
-
-  /**
-   * Indicator whether to dispose the current modified model when the DiffEditor is unmounted or not
-   */
-  keepCurrentModifiedModel?: boolean;
-
-  /**
+=======
    * The theme for the monaco
    * Available options "vs-dark" | "light"
    * Define new themes by `monaco.editor.defineTheme`
    * Defaults to "light"
+>>>>>>> v4
    */
+<<<<<<< master
+  keepCurrentOriginalModel?: boolean;
+=======
   theme?: Theme | string;
+>>>>>>> v4
 
   /**
+<<<<<<< master
+   * Indicator whether to dispose the current modified model when the DiffEditor is unmounted or not
+=======
    * The loading screen before the editor will be mounted
    * Defaults to 'loading...'
+>>>>>>> v4
    */
+<<<<<<< master
+  keepCurrentModifiedModel?: boolean;
+=======
   loading?: React.ReactNode;
+>>>>>>> v4
 
   /**
+<<<<<<< master
+   * The theme for the monaco
+   * Available options "vs-dark" | "light"
+   * Define new themes by `monaco.editor.defineTheme`
+   * Defaults to "light"
+=======
    * IDiffEditorConstructionOptions
+>>>>>>> v4
    */
+<<<<<<< master
+  theme?: Theme | string;
+=======
   options?: monaco.editor.IDiffEditorConstructionOptions;
+>>>>>>> v4
+
+  /**
+<<<<<<< master
+   * The loading screen before the editor will be mounted
+   * Defaults to 'loading...'
+=======
+   * Width of the editor wrapper
+   * Defaults to 100%
+>>>>>>> v4
+   */
+  width?: number | string;
+
+  /**
+   * Height of the editor wrapper
+   * Defaults to 100%
+   */
+<<<<<<< master
+  options?: monaco.editor.IDiffEditorConstructionOptions;
+=======
+  height?: number | string;
+>>>>>>> v4
 
   /**
    * Width of the editor wrapper
@@ -265,6 +361,7 @@ export interface DiffEditorProps {
   /**
    * Props applied to the wrapper element
    */
+<<<<<<< master
   wrapperProps?: object;
 
   /**
@@ -282,12 +379,32 @@ export interface DiffEditorProps {
    * Defaults to "noop"
    */
   onMount?: DiffOnMount;
+=======
+  wrapperClassName?: string;
+
+  /**
+   * Signature: function(monaco: Monaco) => void
+   * An event is emitted before the editor is mounted
+   * It gets the monaco instance as a first argument
+   * Defaults to "noop"
+   */
+  beforeMount?: DiffBeforeMount;
+
+  /**
+   * Signature: function(editor: monaco.editor.IStandaloneCodeEditor, monaco: Monaco) => void
+   * An event is emitted when the editor is mounted
+   * It gets the editor instance as a first argument and the monaco instance as a second
+   * Defaults to "noop"
+   */
+  onMount?: DiffOnMount;
+>>>>>>> v4
 }
 
 declare const DiffEditor: React.FC<DiffEditorProps>;
 
 export { DiffEditor };
 
+<<<<<<< master
 // useMonaco
 declare const useMonaco: () => Monaco | null;
 
@@ -302,6 +419,11 @@ interface CancelablePromise<T> extends Promise<T> {
 
 declare namespace loader {
   function init(): CancelablePromise<Monaco>;
+=======
+// loader
+declare namespace loader {
+  function init(): Promise<Monaco>;
+>>>>>>> v4
   function config(params: {
     paths?: {
       vs?: string,
