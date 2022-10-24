@@ -6,8 +6,8 @@ function App() {
   return (
     <Editor
       height="100vh"
-      defaultLanguage="javascript"
-      defaultValue="// some comment"
+      language="javascript"
+      value="// some comment"
     />
   );
 }

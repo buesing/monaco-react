@@ -17,7 +17,6 @@ const DiffEditor = _ => {
 
   return <div className={classes.root}>
     <MonacoDiffEditor
-      height="100vh"
       theme={monacoTheme}
       original={examples.original}
       modified={examples.modified}

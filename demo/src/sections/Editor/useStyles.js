@@ -6,9 +6,7 @@ const useStyles = makeStyles(theme => ({
     height: '100%',
     display: 'flex',
     justifyContent: 'space-between',
-    padding: 5,
-    'padding-top': 15,
-    'margin-bottom': 15,
+    padding: 20,
   },
 }));
 
