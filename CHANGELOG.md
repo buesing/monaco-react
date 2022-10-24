@@ -10,17 +10,7 @@
 
 ## 4.4.5
 ###### *May 11, 2022*
-
-- loader: update `@mon
-###### *Mar 29, 2022*
-
-- types: add missing type `monaco` in `loader.config`
-
-## 4.4.0
-###### *Mar 28, 2022*
-
-- loader: update `@monaco-editor/loader` version (1.3.0); using `monaco` from `node_modules` is supported
-- playground: update playground packages
+packages
 
 ## 4.3.1
 ###### *Oct 3, 2021*
