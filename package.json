@@ -1,21 +1,5 @@
 ### Versions
 
-<<<<<<< master
-## 4.4.6
-###### *Sep 24, 2022*
-
-- fix onChange: unconditionally call onChange inside onDidChangeModelContent
-- add preventCreation flag
-- update lock files
-
-## 4.4.5
-###### *May 11, 2022*
-
-- loader: update `@monaco-editor/loader` version (1.3.2)
-
-## 4.4.4
-###### *Apr 23, 2022*
-
 - package: fix npm prepublish step
 
 ## 4.4.3
