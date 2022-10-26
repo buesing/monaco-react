@@ -1,7 +1,12 @@
 {
   "name": "@monaco-editor/react",
+<<<<<<< v4
   "version": "4.0.0",
   "description": "Monaco editor wrapper for easy/one-line integration with React applications (e.g. powered by create-react-app) without need of webpack configuration files",
+=======
+  "version": "4.4.6",
+  "description": "Monaco Editor for React - use the monaco-editor in any React application without needing to use webpack (or rollup/parcel/etc) configuration files / plugins",
+>>>>>>> master
   "author": "Suren Atoyan <contact@surenatoyan.com>",
   "main": "lib/cjs/index.js",
   "module": "lib/es/index.js",
@@ -33,9 +38,15 @@
   },
   "homepage": "https://github.com/suren-atoyan/monaco-react#readme",
   "peerDependencies": {
+<<<<<<< v4
     "monaco-editor": "^0.21.2",
     "react": "^16.8.0 || ^17.0.0",
     "react-dom": "^16.8.0 || ^17.0.0"
+=======
+    "monaco-editor": ">= 0.25.0 < 1",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+>>>>>>> master
   },
   "devDependencies": {
     "@babel/cli": "^7.10.5",
@@ -74,7 +85,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm test && npm run lint"
+      "pre-commit": "rm -rf ./lib && npm test && npm run lint"
     }
   },
   "jest": {
@@ -85,8 +96,13 @@
     ]
   },
   "dependencies": {
+<<<<<<< v4
     "@monaco-editor/loader": "^1.0.0",
     "prop-types": "^15.7.2",
     "state-local": "^1.0.7"
+=======
+    "@monaco-editor/loader": "^1.3.2",
+    "prop-types": "^15.7.2"
+>>>>>>> master
   }
 }
