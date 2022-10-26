@@ -1,35 +1,33 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import loader from '@monaco-editor/loader';
+import state from 'state-local';
 
 import MonacoContainer from '../MonacoContainer';
 import useMount from '../hooks/useMount';
 import useUpdate from '../hooks/useUpdate';
-import usePrevious from '../hooks/usePrevious';
-import { noop, getOrCreateModel, isUndefined } from '../utils';
+import { noop, getOrCreateModel } from '../utils';
 
-const viewStates = new Map();
+const [getModelMarkersSetter, setModelMarkersSetter] = state.create({
+  backup: null,
+});
 
 function Editor({
   defaultValue,
-  defaultLanguage,
-  defaultPath,
   value,
   language,
-  path,
   /* === */
+  defaultModelPath,
   theme,
   line,
   loading,
   options,
   overrideServices,
-  saveViewState,
-  keepCurrentModel,
   /* === */
   width,
   height,
   className,
-  wrapperProps,
+  wrapperClassName,
   /* === */
   beforeMount,
   onMount,
@@ -45,8 +43,6 @@ function Editor({
   const beforeMountRef = useRef(beforeMount);
   const subscriptionRef = useRef(null);
   const valueRef = useRef(value);
-  const previousPath = usePrevious(path);
-  const preventCreation = useRef(false);
 
   useMount(() => {
     const cancelable = loader.init();
@@ -58,21 +54,6 @@ function Editor({
 
     return () => editorRef.current ? disposeEditor() : cancelable.cancel();
   });
-
-  useUpdate(() => {
-    const model = getOrCreateModel(
-      monacoRef.current,
-      defaultValue || value,
-      defaultLanguage || language,
-      path,
-    );
-
-    if (model !== editorRef.current.getModel()) {
-      saveViewState && viewStates.set(previousPath, editorRef.current.saveViewState());
-      editorRef.current.setModel(model);
-      saveViewState && editorRef.current.restoreViewState(viewStates.get(path));
-    }
-  }, [path], isEditorReady);
 
   useUpdate(() => {
     editorRef.current.updateOptions(options);
@@ -99,10 +80,7 @@ function Editor({
   }, [language], isEditorReady);
 
   useUpdate(() => {
-    // reason for undefined check: https://github.com/suren-atoyan/monaco-react/pull/188
-    if(!isUndefined(line)) {
-      editorRef.current.revealLine(line);
-    }
+    editorRef.current.setScrollPosition({ scrollTop: line });
   }, [line], isEditorReady);
 
   useUpdate(() => {
@@ -110,41 +88,37 @@ function Editor({
   }, [theme], isEditorReady);
 
   const createEditor = useCallback(() => {
-    if (!preventCreation.current) {
-      beforeMountRef.current(monacoRef.current);
-      const autoCreatedModelPath = path || defaultPath;
+    beforeMountRef.current(monacoRef.current);
+    const defaultModel = getOrCreateModel(
+      monacoRef.current,
+      defaultValue || value,
+      language,
+      defaultModelPath,
+    );
 
-      const defaultModel = getOrCreateModel(
-        monacoRef.current,
-        value || defaultValue,
-        defaultLanguage || language,
-        autoCreatedModelPath,
-      );
+    editorRef.current = monacoRef.current.editor.create(containerRef.current, {
+      model: defaultModel,
+      automaticLayout: true,
+      ...options,
+    }, overrideServices);
 
-      editorRef.current = monacoRef.current.editor.create(containerRef.current, {
-        model: defaultModel,
-        automaticLayout: true,
-        ...options,
-      }, overrideServices);
+    monacoRef.current.editor.setTheme(theme);
 
-      saveViewState && editorRef.current.restoreViewState(viewStates.get(autoCreatedModelPath));
-
-      monacoRef.current.editor.setTheme(theme);
-
-      setIsEditorReady(true);
-      preventCreation.current = true;
+    if (!getModelMarkersSetter().backup) {
+      setModelMarkersSetter({
+        backup: monacoRef.current.editor.setModelMarkers,
+      });
     }
+
+    setIsEditorReady(true);
   }, [
-    defaultValue,
-    defaultLanguage,
-    defaultPath,
-    value,
     language,
-    path,
     options,
     overrideServices,
-    saveViewState,
     theme,
+    value,
+    defaultValue,
+    defaultModelPath,
   ]);
 
   useEffect(() => {
@@ -164,12 +138,15 @@ function Editor({
   // to avoid unnecessary updates (attach - dispose listener) in subscription
   valueRef.current = value;
 
-  // onChange
   useEffect(() => {
     if (isEditorReady && onChange) {
       subscriptionRef.current?.dispose();
       subscriptionRef.current = editorRef.current?.onDidChangeModelContent(event => {
-        onChange(editorRef.current.getValue(), event);
+        const editorValue = editorRef.current.getValue();
+
+        if (valueRef.current !== editorValue) {
+          onChange(editorValue, event);
+        }
       });
     }
   }, [isEditorReady, onChange]);
@@ -177,33 +154,23 @@ function Editor({
   // onValidate
   useEffect(() => {
     if (isEditorReady) {
-      const changeMarkersListener = monacoRef.current.editor.onDidChangeMarkers(uris => {
-        const editorUri = editorRef.current.getModel()?.uri;
+      monacoRef.current.editor.setModelMarkers = function(model, owner, markers) {
+        getModelMarkersSetter().backup?.call(
+          monacoRef.current.editor,
+          model,
+          owner,
+          markers,
+        );
 
-        if (editorUri) {
-          const currentEditorHasMarkerChanges = uris.find((uri) => uri.path === editorUri.path);
-          if (currentEditorHasMarkerChanges) {
-            const markers = monacoRef.current.editor.getModelMarkers({ resource: editorUri });
-            onValidate?.(markers);
-          }
+        if (markers.length !== 0) {
+          onValidate?.(markers);
         }
-      });
-   
-      return () => {
-        changeMarkersListener?.dispose();
-      };
+      }
     }
   }, [isEditorReady, onValidate]);
 
   function disposeEditor() {
     subscriptionRef.current?.dispose();
-
-    if (keepCurrentModel) {
-      saveViewState && viewStates.set(path, editorRef.current.saveViewState());
-    } else {
-      editorRef.current.getModel()?.dispose();
-    }
-
     editorRef.current.dispose();
   }
 
@@ -215,31 +182,27 @@ function Editor({
       loading={loading}
       _ref={containerRef}
       className={className}
-      wrapperProps={wrapperProps}
+      wrapperClassName={wrapperClassName}
     />
   );
 }
 
 Editor.propTypes = {
   defaultValue: PropTypes.string,
-  defaultPath: PropTypes.string,
-  defaultLanguage: PropTypes.string,
   value: PropTypes.string,
   language: PropTypes.string,
-  path: PropTypes.string,
   /* === */
+  defaultModelPath: PropTypes.string,
   theme: PropTypes.string,
   line: PropTypes.number,
   loading: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
   options: PropTypes.object,
   overrideServices: PropTypes.object,
-  saveViewState: PropTypes.bool,
-  keepCurrentModel: PropTypes.bool,
   /* === */
   width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   height: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   className: PropTypes.string,
-  wrapperProps: PropTypes.object,
+  wrapperClassName: PropTypes.string,
   /* === */
   beforeMount: PropTypes.func,
   onMount: PropTypes.func,
@@ -248,16 +211,14 @@ Editor.propTypes = {
 };
 
 Editor.defaultProps = {
+  defaultModelPath: 'inmemory://model/1',
   theme: 'light',
   loading: 'Loading...',
   options: {},
   overrideServices: {},
-  saveViewState: true,
-  keepCurrentModel: false,
   /* === */
   width: '100%',
   height: '100%',
-  wrapperProps: {},
   /* === */
   beforeMount: noop,
   onMount: noop,
