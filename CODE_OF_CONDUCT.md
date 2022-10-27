@@ -1,76 +1,253 @@
-# Contributor Covenant Code of Conduct
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import loader from '@monaco-editor/loader';
 
-## Our Pledge
+import MonacoContainer from '../MonacoContainer';
+import useMount from '../hooks/useMount';
+import useUpdate from '../hooks/useUpdate';
+import { noop, getOrCreateModel } from '../utils';
 
-In the interest of fostering an open and welcoming environment, we as
-contributors and maintainers pledge to making participation in our project and
-our community a harassment-free experience for everyone, regardless of age, body
-size, disability, ethnicity, sex characteristics, gender identity and expression,
-level of experience, education, socio-economic status, nationality, personal
-appearance, race, religion, or sexual identity and orientation.
+function DiffEditor ({
+  original,
+  modified,
+  language,
+  originalLanguage,
+  modifiedLanguage,
+  /* === */
+  originalModelPath,
+  modifiedModelPath,
+  keepCurrentOriginalModel,
+  keepCurrentModifiedModel,
+>>>>>>> master
+  theme,
+  loading,
+  options,
+  /* === */
+  height,
+  width,
+  className,
+<<<<<<< v4
+  wrapperClassName,
+  /* === */
+  beforeMount,
+  onMount,
+=======
+  wrapperProps,
+  /* === */
+  beforeMount,
+  onMount,
+>>>>>>> master
+}) {
+  const [isEditorReady, setIsEditorReady] = useState(false);
+  const [isMonacoMounting, setIsMonacoMounting] = useState(true);
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null);
+  const containerRef = useRef(null);
+  const onMountRef = useRef(onMount);
+  const beforeMountRef = useRef(beforeMount);
 
-## Our Standards
+  useMount(() => {
+    const cancelable = loader.init();
 
-Examples of behavior that contributes to creating a positive environment
-include:
+    cancelable
+      .then(monaco => ((monacoRef.current = monaco) && setIsMonacoMounting(false)))
+      .catch(error => error?.type !== 'cancelation' &&
+        console.error('Monaco initialization: error:', error));
 
-* Using welcoming and inclusive language
-* Being respectful of differing viewpoints and experiences
-* Gracefully accepting constructive criticism
-* Focusing on what is best for the community
-* Showing empathy towards other community members
+    return () => editorRef.current ? disposeEditor() : cancelable.cancel();
+  });
 
-Examples of unacceptable behavior by participants include:
+  useUpdate(() => {
+    const modifiedEditor = editorRef.current.getModifiedEditor();
+    if (modifiedEditor.getOption(monacoRef.current.editor.EditorOption.readOnly)) {
+      modifiedEditor.setValue(modified);
+    } else {
+      if (modified !== modifiedEditor.getValue()) {
+        modifiedEditor.executeEdits('', [{
+          range: modifiedEditor.getModel().getFullModelRange(),
+          text: modified,
+          forceMoveMarkers: true,
+        }]);
 
-* The use of sexualized language or imagery and unwelcome sexual attention or
- advances
-* Trolling, insulting/derogatory comments, and personal or political attacks
-* Public or private harassment
-* Publishing others' private information, such as a physical or electronic
- address, without explicit permission
-* Other conduct which could reasonably be considered inappropriate in a
- professional setting
+        modifiedEditor.pushUndoStop();
+      }
+    }
+  }, [modified], isEditorReady);
 
-## Our Responsibilities
+  useUpdate(() => {
+    editorRef.current.getModel().original.setValue(original);
+  }, [original], isEditorReady);
 
-Project maintainers are responsible for clarifying the standards of acceptable
-behavior and are expected to take appropriate and fair corrective action in
-response to any instances of unacceptable behavior.
+  useUpdate(() => {
+    const { original, modified } = editorRef.current.getModel();
 
-Project maintainers have the right and responsibility to remove, edit, or
-reject comments, commits, code, wiki edits, issues, and other contributions
-that are not aligned to this Code of Conduct, or to ban temporarily or
-permanently any contributor for other behaviors that they deem inappropriate,
-threatening, offensive, or harmful.
+    monacoRef.current.editor.setModelLanguage(original, originalLanguage || language);
+    monacoRef.current.editor.setModelLanguage(modified, modifiedLanguage || language);
+  }, [language, originalLanguage, modifiedLanguage], isEditorReady);
 
-## Scope
+  useUpdate(() => {
+    monacoRef.current.editor.setTheme(theme);
+  }, [theme], isEditorReady);
 
-This Code of Conduct applies both within project spaces and in public spaces
-when an individual is representing the project or its community. Examples of
-representing a project or community include using an official project e-mail
-address, posting via an official social media account, or acting as an appointed
-representative at an online or offline event. Representation of a project may be
-further defined and clarified by project maintainers.
+  useUpdate(() => {
+    editorRef.current.updateOptions(options);
+  }, [options], isEditorReady);
 
-## Enforcement
+  const setModels = useCallback(() => {
+<<<<<<< v4
+    beforeMountRef.current(monacoRef.current);
+    const originalModel = monacoRef.current.editor
+      .createModel(
+        original,
+        originalLanguage || language,
+        monacoRef.current.Uri.parse(originalModelPath),
+      );
+=======
+    beforeMountRef.current(monacoRef.current);
+    const originalModel = getOrCreateModel(
+      monacoRef.current,
+      original,
+      originalLanguage || language,
+      originalModelPath,
+    );
+>>>>>>> master
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at contact@surenatoyan.com. All
-complaints will be reviewed and investigated and will result in a response that
-is deemed necessary and appropriate to the circumstances. The project team is
-obligated to maintain confidentiality with regard to the reporter of an incident.
-Further details of specific enforcement policies may be posted separately.
+<<<<<<< v4
+    const modifiedModel = monacoRef.current.editor
+      .createModel(
+        modified,
+        modifiedLanguage || language,
+        monacoRef.current.Uri.parse(modifiedModelPath),
+      );
+=======
+    const modifiedModel = getOrCreateModel(
+      monacoRef.current,
+      modified,
+      modifiedLanguage || language,
+      modifiedModelPath,
+    );
+>>>>>>> master
 
-Project maintainers who do not follow or enforce the Code of Conduct in good
-faith may face temporary or permanent repercussions as determined by other
-members of the project's leadership.
+    editorRef.current.setModel({ original: originalModel, modified: modifiedModel });
+  }, [language, modified, modifiedLanguage, original, originalLanguage, originalModelPath, modifiedModelPath]);
 
-## Attribution
+  const createEditor = useCallback(() => {
+    editorRef.current = monacoRef.current.editor.createDiffEditor(containerRef.current, {
+      automaticLayout: true,
+      ...options,
+    });
 
-This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 1.4,
-available at https://www.contributor-covenant.org/version/1/4/code-of-conduct.html
+    setModels();
 
-[homepage]: https://www.contributor-covenant.org
+    monacoRef.current.editor.setTheme(theme);
 
-For answers to common questions about this code of conduct, see
-https://www.contributor-covenant.org/faq
+    setIsEditorReady(true);
+  }, [options, theme, setModels]);
+
+  useEffect(() => {
+    if (isEditorReady) {
+      onMountRef.current(
+        editorRef.current,
+        monacoRef.current,
+      );
+    }
+  }, [isEditorReady]);
+
+  useEffect(() => {
+    !isMonacoMounting && !isEditorReady && createEditor();
+  }, [isMonacoMounting, isEditorReady, createEditor]);
+
+  function disposeEditor() {
+    const models = editorRef.current.getModel();
+
+    if (!keepCurrentOriginalModel) {
+      models.original?.dispose();
+    }
+
+    if (!keepCurrentModifiedModel) {
+      models.modified?.dispose();
+    }
+
+    editorRef.current.dispose();
+  }
+
+  return (
+    <MonacoContainer
+      width={width}
+      height={height}
+      isEditorReady={isEditorReady}
+      loading={loading}
+      _ref={containerRef}
+      className={className}
+      wrapperProps={wrapperProps}
+    />
+  );
+}
+
+DiffEditor.propTypes = {
+  original: PropTypes.string,
+  modified: PropTypes.string,
+  language: PropTypes.string,
+  originalLanguage: PropTypes.string,
+  modifiedLanguage: PropTypes.string,
+<<<<<<< v4
+  /* === */
+  originalModelPath: PropTypes.string,
+  modifiedModelPath: PropTypes.string,
+=======
+  /* === */
+  originalModelPath: PropTypes.string,
+  modifiedModelPath: PropTypes.string,
+  keepCurrentOriginalModel: PropTypes.bool,
+  keepCurrentModifiedModel: PropTypes.bool,
+>>>>>>> master
+  theme: PropTypes.string,
+  loading: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
+  options: PropTypes.object,
+  /* === */
+  width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  height: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  className: PropTypes.string,
+<<<<<<< v4
+  wrapperClassName: PropTypes.string,
+  /* === */
+  beforeMount: PropTypes.func,
+  onMount: PropTypes.func,
+=======
+  wrapperProps: PropTypes.object,
+  /* === */
+  beforeMount: PropTypes.func,
+  onMount: PropTypes.func,
+>>>>>>> master
+};
+
+DiffEditor.defaultProps = {
+<<<<<<< v4
+  originalModelPath: 'inmemory://model/1',
+  modifiedModelPath: 'inmemory://model/2',
+=======
+>>>>>>> master
+  theme: 'light',
+  loading: 'Loading...',
+  options: {},
+<<<<<<< v4
+  /* === */
+  width: '100%',
+  height: '100%',
+  /* === */
+  beforeMount: noop,
+  onMount: noop,
+=======
+  keepCurrentOriginalModel: false,
+  keepCurrentModifiedModel: false,
+  /* === */
+  width: '100%',
+  height: '100%',
+  wrapperProps: {},
+  /* === */
+  beforeMount: noop,
+  onMount: noop,
+>>>>>>> master
+};
+
+export default DiffEditor;

@@ -5,28 +5,8 @@ import loader from '@monaco-editor/loader';
 import MonacoContainer from '../MonacoContainer';
 import useMount from '../hooks/useMount';
 import useUpdate from '../hooks/useUpdate';
-import { noop } from '../utils';
-
-function DiffEditor ({
-  original,
-  modified,
-  language,
-  originalLanguage,
-  modifiedLanguage,
-  /* === */
-  originalModelPath,
-  modifiedModelPath,
-  theme,
-  loading,
-  options,
-  /* === */
-  height,
-  width,
-  className,
-  wrapperClassName,
-  /* === */
-  beforeMount,
-  onMount,
+import { noop, getOrCreateModel } from '../utils';
+Whattt11t1ttttt
 }) {
   const [isEditorReady, setIsEditorReady] = useState(false);
   const [isMonacoMounting, setIsMonacoMounting] = useState(true);
@@ -48,7 +28,20 @@ function DiffEditor ({
   });
 
   useUpdate(() => {
-    editorRef.current.getModel().modified.setValue(modified);
+    const modifiedEditor = editorRef.current.getModifiedEditor();
+    if (modifiedEditor.getOption(monacoRef.current.editor.EditorOption.readOnly)) {
+      modifiedEditor.setValue(modified);
+    } else {
+      if (modified !== modifiedEditor.getValue()) {
+        modifiedEditor.executeEdits('', [{
+          range: modifiedEditor.getModel().getFullModelRange(),
+          text: modified,
+          forceMoveMarkers: true,
+        }]);
+
+        modifiedEditor.pushUndoStop();
+      }
+    }
   }, [modified], isEditorReady);
 
   useUpdate(() => {
@@ -71,6 +64,7 @@ function DiffEditor ({
   }, [options], isEditorReady);
 
   const setModels = useCallback(() => {
+<<<<<<< v4
     beforeMountRef.current(monacoRef.current);
     const originalModel = monacoRef.current.editor
       .createModel(
@@ -78,13 +72,31 @@ function DiffEditor ({
         originalLanguage || language,
         monacoRef.current.Uri.parse(originalModelPath),
       );
+=======
+    beforeMountRef.current(monacoRef.current);
+    const originalModel = getOrCreateModel(
+      monacoRef.current,
+      original,
+      originalLanguage || language,
+      originalModelPath,
+    );
+>>>>>>> master
 
+<<<<<<< v4
     const modifiedModel = monacoRef.current.editor
       .createModel(
         modified,
         modifiedLanguage || language,
         monacoRef.current.Uri.parse(modifiedModelPath),
       );
+=======
+    const modifiedModel = getOrCreateModel(
+      monacoRef.current,
+      modified,
+      modifiedLanguage || language,
+      modifiedModelPath,
+    );
+>>>>>>> master
 
     editorRef.current.setModel({ original: originalModel, modified: modifiedModel });
   }, [language, modified, modifiedLanguage, original, originalLanguage, originalModelPath, modifiedModelPath]);
@@ -115,7 +127,19 @@ function DiffEditor ({
     !isMonacoMounting && !isEditorReady && createEditor();
   }, [isMonacoMounting, isEditorReady, createEditor]);
 
-  const disposeEditor = () => editorRef.current.dispose();
+  function disposeEditor() {
+    const models = editorRef.current.getModel();
+
+    if (!keepCurrentOriginalModel) {
+      models.original?.dispose();
+    }
+
+    if (!keepCurrentModifiedModel) {
+      models.modified?.dispose();
+    }
+
+    editorRef.current.dispose();
+  }
 
   return (
     <MonacoContainer
@@ -125,7 +149,7 @@ function DiffEditor ({
       loading={loading}
       _ref={containerRef}
       className={className}
-      wrapperClassName={wrapperClassName}
+      wrapperProps={wrapperProps}
     />
   );
 }
@@ -136,9 +160,17 @@ DiffEditor.propTypes = {
   language: PropTypes.string,
   originalLanguage: PropTypes.string,
   modifiedLanguage: PropTypes.string,
+<<<<<<< v4
   /* === */
   originalModelPath: PropTypes.string,
   modifiedModelPath: PropTypes.string,
+=======
+  /* === */
+  originalModelPath: PropTypes.string,
+  modifiedModelPath: PropTypes.string,
+  keepCurrentOriginalModel: PropTypes.bool,
+  keepCurrentModifiedModel: PropTypes.bool,
+>>>>>>> master
   theme: PropTypes.string,
   loading: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
   options: PropTypes.object,
@@ -146,24 +178,46 @@ DiffEditor.propTypes = {
   width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   height: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   className: PropTypes.string,
+<<<<<<< v4
   wrapperClassName: PropTypes.string,
   /* === */
   beforeMount: PropTypes.func,
   onMount: PropTypes.func,
+=======
+  wrapperProps: PropTypes.object,
+  /* === */
+  beforeMount: PropTypes.func,
+  onMount: PropTypes.func,
+>>>>>>> master
 };
 
 DiffEditor.defaultProps = {
+<<<<<<< v4
   originalModelPath: 'inmemory://model/1',
   modifiedModelPath: 'inmemory://model/2',
+=======
+>>>>>>> master
   theme: 'light',
   loading: 'Loading...',
   options: {},
+<<<<<<< v4
   /* === */
   width: '100%',
   height: '100%',
   /* === */
   beforeMount: noop,
   onMount: noop,
+=======
+  keepCurrentOriginalModel: false,
+  keepCurrentModifiedModel: false,
+  /* === */
+  width: '100%',
+  height: '100%',
+  wrapperProps: {},
+  /* === */
+  beforeMount: noop,
+  onMount: noop,
+>>>>>>> master
 };
 
 export default DiffEditor;

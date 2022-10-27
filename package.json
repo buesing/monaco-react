@@ -1,92 +1,253 @@
-{
-  "name": "@monaco-editor/react",
-  "version": "4.0.0",
-  "description": "Monaco editor wrapper for easy/one-line integration with React applications (e.g. powered by create-react-app) without need of webpack configuration files",
-  "author": "Suren Atoyan <contact@surenatoyan.com>",
-  "main": "lib/cjs/index.js",
-  "module": "lib/es/index.js",
-  "unpkg": "lib/umd/monaco-react.min.js",
-  "jsdelivr": "lib/umd/monaco-react.min.js",
-  "types": "lib/types.d.ts",
-  "scripts": {
-    "lint": "npx eslint src",
-    "build": "rollup -c && cp ./src/types.d.ts ./lib/",
-    "build-dev": "rollup -c -w && cp ./src/types.d.ts ./lib/",
-    "prepublish": "npm test && npm run lint && npm run build",
-    "test": "npx jest"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/suren-atoyan/monaco-react.git"
-  },
-  "keywords": [
-    "monaco",
-    "editor",
-    "react",
-    "vscode",
-    "code",
-    "text"
-  ],
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/suren-atoyan/monaco-react/issues"
-  },
-  "homepage": "https://github.com/suren-atoyan/monaco-react#readme",
-  "peerDependencies": {
-    "monaco-editor": "^0.21.2",
-    "react": "^16.8.0 || ^17.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0"
-  },
-  "devDependencies": {
-    "@babel/cli": "^7.10.5",
-    "@babel/core": "^7.11.0",
-    "@babel/plugin-transform-runtime": "^7.11.0",
-    "@babel/preset-env": "^7.11.0",
-    "@babel/preset-react": "^7.10.4",
-    "@rollup/plugin-babel": "^5.2.2",
-    "@rollup/plugin-commonjs": "^17.0.0",
-    "@rollup/plugin-node-resolve": "^11.0.1",
-    "@rollup/plugin-replace": "^2.3.4",
-    "@testing-library/jest-dom": "^5.1.1",
-    "@testing-library/react": "^9.4.0",
-    "babel-eslint": "10.0.3",
-    "babel-jest": "^25.1.0",
-    "eslint": "6.6.0",
-    "eslint-config-react-app": "^5.2.0",
-    "eslint-plugin-flowtype": "4.6.0",
-    "eslint-plugin-import": "2.20.1",
-    "eslint-plugin-jsx-a11y": "6.2.3",
-    "eslint-plugin-react": "7.18.3",
-    "eslint-plugin-react-hooks": "2.4.0",
-    "husky": "^4.2.3",
-    "jest": "^25.1.0",
-    "react": "^16.12.0",
-    "react-dom": "^16.12.0",
-    "rollup": "^2.36.1",
-    "rollup-plugin-peer-deps-external": "^2.2.4",
-    "rollup-plugin-terser": "^7.0.2"
-  },
-  "babel": {
-    "presets": [
-      "@babel/preset-env",
-      "@babel/preset-react"
-    ]
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm test && npm run lint"
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import loader from '@monaco-editor/loader';
+
+import MonacoContainer from '../MonacoContainer';
+import useMount from '../hooks/useMount';
+import useUpdate from '../hooks/useUpdate';
+import { noop, getOrCreateModel } from '../utils';
+
+function DiffEditor ({
+  original,
+  modified,
+  language,
+  originalLanguage,
+  modifiedLanguage,
+  /* === */
+  originalModelPath,
+  modifiedModelPath,
+  keepCurrentOriginalModel,
+  keepCurrentModifiedModel,
+>>>>>>> master
+  theme,
+  loading,
+  options,
+  /* === */
+  height,
+  width,
+  className,
+<<<<<<< v4
+  wrapperClassName,
+  /* === */
+  beforeMount,
+  onMount,
+=======
+  wrapperProps,
+  /* === */
+  beforeMount,
+  onMount,
+>>>>>>> master
+}) {
+  const [isEditorReady, setIsEditorReady] = useState(false);
+  const [isMonacoMounting, setIsMonacoMounting] = useState(true);
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null);
+  const containerRef = useRef(null);
+  const onMountRef = useRef(onMount);
+  const beforeMountRef = useRef(beforeMount);
+
+  useMount(() => {
+    const cancelable = loader.init();
+
+    cancelable
+      .then(monaco => ((monacoRef.current = monaco) && setIsMonacoMounting(false)))
+      .catch(error => error?.type !== 'cancelation' &&
+        console.error('Monaco initialization: error:', error));
+
+    return () => editorRef.current ? disposeEditor() : cancelable.cancel();
+  });
+
+  useUpdate(() => {
+    const modifiedEditor = editorRef.current.getModifiedEditor();
+    if (modifiedEditor.getOption(monacoRef.current.editor.EditorOption.readOnly)) {
+      modifiedEditor.setValue(modified);
+    } else {
+      if (modified !== modifiedEditor.getValue()) {
+        modifiedEditor.executeEdits('', [{
+          range: modifiedEditor.getModel().getFullModelRange(),
+          text: modified,
+          forceMoveMarkers: true,
+        }]);
+
+        modifiedEditor.pushUndoStop();
+      }
     }
-  },
-  "jest": {
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/demo/",
-      "/playground/"
-    ]
-  },
-  "dependencies": {
-    "@monaco-editor/loader": "^1.0.0",
-    "prop-types": "^15.7.2",
-    "state-local": "^1.0.7"
+  }, [modified], isEditorReady);
+
+  useUpdate(() => {
+    editorRef.current.getModel().original.setValue(original);
+  }, [original], isEditorReady);
+
+  useUpdate(() => {
+    const { original, modified } = editorRef.current.getModel();
+
+    monacoRef.current.editor.setModelLanguage(original, originalLanguage || language);
+    monacoRef.current.editor.setModelLanguage(modified, modifiedLanguage || language);
+  }, [language, originalLanguage, modifiedLanguage], isEditorReady);
+
+  useUpdate(() => {
+    monacoRef.current.editor.setTheme(theme);
+  }, [theme], isEditorReady);
+
+  useUpdate(() => {
+    editorRef.current.updateOptions(options);
+  }, [options], isEditorReady);
+
+  const setModels = useCallback(() => {
+<<<<<<< v4
+    beforeMountRef.current(monacoRef.current);
+    const originalModel = monacoRef.current.editor
+      .createModel(
+        original,
+        originalLanguage || language,
+        monacoRef.current.Uri.parse(originalModelPath),
+      );
+=======
+    beforeMountRef.current(monacoRef.current);
+    const originalModel = getOrCreateModel(
+      monacoRef.current,
+      original,
+      originalLanguage || language,
+      originalModelPath,
+    );
+>>>>>>> master
+
+<<<<<<< v4
+    const modifiedModel = monacoRef.current.editor
+      .createModel(
+        modified,
+        modifiedLanguage || language,
+        monacoRef.current.Uri.parse(modifiedModelPath),
+      );
+=======
+    const modifiedModel = getOrCreateModel(
+      monacoRef.current,
+      modified,
+      modifiedLanguage || language,
+      modifiedModelPath,
+    );
+>>>>>>> master
+
+    editorRef.current.setModel({ original: originalModel, modified: modifiedModel });
+  }, [language, modified, modifiedLanguage, original, originalLanguage, originalModelPath, modifiedModelPath]);
+
+  const createEditor = useCallback(() => {
+    editorRef.current = monacoRef.current.editor.createDiffEditor(containerRef.current, {
+      automaticLayout: true,
+      ...options,
+    });
+
+    setModels();
+
+    monacoRef.current.editor.setTheme(theme);
+
+    setIsEditorReady(true);
+  }, [options, theme, setModels]);
+
+  useEffect(() => {
+    if (isEditorReady) {
+      onMountRef.current(
+        editorRef.current,
+        monacoRef.current,
+      );
+    }
+  }, [isEditorReady]);
+
+  useEffect(() => {
+    !isMonacoMounting && !isEditorReady && createEditor();
+  }, [isMonacoMounting, isEditorReady, createEditor]);
+
+  function disposeEditor() {
+    const models = editorRef.current.getModel();
+
+    if (!keepCurrentOriginalModel) {
+      models.original?.dispose();
+    }
+
+    if (!keepCurrentModifiedModel) {
+      models.modified?.dispose();
+    }
+
+    editorRef.current.dispose();
   }
+
+  return (
+    <MonacoContainer
+      width={width}
+      height={height}
+      isEditorReady={isEditorReady}
+      loading={loading}
+      _ref={containerRef}
+      className={className}
+      wrapperProps={wrapperProps}
+    />
+  );
 }
+
+DiffEditor.propTypes = {
+  original: PropTypes.string,
+  modified: PropTypes.string,
+  language: PropTypes.string,
+  originalLanguage: PropTypes.string,
+  modifiedLanguage: PropTypes.string,
+<<<<<<< v4
+  /* === */
+  originalModelPath: PropTypes.string,
+  modifiedModelPath: PropTypes.string,
+=======
+  /* === */
+  originalModelPath: PropTypes.string,
+  modifiedModelPath: PropTypes.string,
+  keepCurrentOriginalModel: PropTypes.bool,
+  keepCurrentModifiedModel: PropTypes.bool,
+>>>>>>> master
+  theme: PropTypes.string,
+  loading: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
+  options: PropTypes.object,
+  /* === */
+  width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  height: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  className: PropTypes.string,
+<<<<<<< v4
+  wrapperClassName: PropTypes.string,
+  /* === */
+  beforeMount: PropTypes.func,
+  onMount: PropTypes.func,
+=======
+  wrapperProps: PropTypes.object,
+  /* === */
+  beforeMount: PropTypes.func,
+  onMount: PropTypes.func,
+>>>>>>> master
+};
+
+DiffEditor.defaultProps = {
+<<<<<<< v4
+  originalModelPath: 'inmemory://model/1',
+  modifiedModelPath: 'inmemory://model/2',
+=======
+>>>>>>> master
+  theme: 'light',
+  loading: 'Loading...',
+  options: {},
+<<<<<<< v4
+  /* === */
+  width: '100%',
+  height: '100%',
+  /* === */
+  beforeMount: noop,
+  onMount: noop,
+=======
+  keepCurrentOriginalModel: false,
+  keepCurrentModifiedModel: false,
+  /* === */
+  width: '100%',
+  height: '100%',
+  wrapperProps: {},
+  /* === */
+  beforeMount: noop,
+  onMount: noop,
+>>>>>>> master
+};
+
+export default DiffEditor;
